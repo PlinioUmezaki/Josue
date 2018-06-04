@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<body>
+
+<h1>Minhas dívidas</h1>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+  <form>
+    Descrição:  <input type="text" ng-model="descricao"><br><br>
+    Valor:      <input type="text" ng-model="valor"><br><br>
+    Devedor:    <input type="text" ng-model="devedorId"><br><br>
+    Credor:     <input type="text" ng-model="credorId"><br><br>
+
+    <button ng-click="acessar()">ACESSAR</button> &nbsp;
+    <button ng-click="inserir()">INSERIR</button> &nbsp;
+    <button ng-click="atualizar()">ATUALIZAR</button> &nbsp;
+    <button ng-click="remover()">REMOVER</button> &nbsp;
+  </form>
+
+  <br><br>Resultado: {{mensagem}}
+
+  <br><br>
+  <table cellspacing="8">
+    <tr> 
+        <th>{{hdescricao}}</th>
+        <th>{{hvalor}}</th>
+        <th>{{hdevedorId}}</th>
+        <th>{{hcredorId}}</th>
+    </tr>
+    <tr ng-repeat="debt in debts">
+        <td>{{debt.descricao}}</td>
+        <td>{{debt.valor}}</td>
+        <td>{{debt.devedorId}}</td>
+        <td>{{debt.credorId}}</td>
+    </tr>
+  </table>
+</div>
+
+<script>
+    var app = angular.module('myApp', []);
+    app.controller('myCtrl', function($scope, $http) {
+
+        //ACESSO
+        $scope.acessar = function() {
+            var url = "/debts";
+            if ($scope.id != undefined) {
+                url = "/debts/"+ $scope.id;
+            }
+            var request = $http({
+                "method": "get",
+                "url": url
+            });
+            request.then(function successCallback(reply) {
+                if (reply.data.debts != null) {
+                    $scope.hdescricao = "Descrição";
+                    $scope.hvalor = "Valor";
+                    $scope.hdevedorId = "Id do Devedor";
+                    $scope.hcredorId = "Id do Credor";
+                    $scope.mensagem = "";
+                    $scope.debts = reply.data.debts
+                } else {
+                    $scope.clear();
+                    $scope.mensagem = reply.data.result
+                }
+            });
+            request.then(function errorCallback(reply) {
+                alert("Request Error");
+            });
+        };
+
+        // INSERÇÃO
+        $scope.inserir = function() {
+            $scope.clear();
+            if ($scope.descricao == undefined || $scope.descricao.length == 0 ||
+                $scope.valor == undefined || $scope.valor.length == 0 ||
+                $scope.devedorId == undefined || $scope.devedorId.length == 0 ||
+                $scope.credorId == undefined || $scope.credorId.length == 0) {
+
+                $scope.clear();
+                $scope.mensagem = "Fill the fields above.";
+                return;        
+            }
+
+            var data = {
+                "descricao": $scope.descricao,
+                "valor": $scope.valor,
+                "devedorId": $scope.devedorId,
+                "credorId": $scope.credorId
+            };
+
+            var request = $http({
+                "method": "post",
+                "url": "/debts",
+                "data": data
+            });
+
+            request.then(function successCallback(reply) {
+                $scope.mensagem = reply.data.result;
+            });
+
+            request(function errorCallback(reply) {
+                alert("Request Error");
+            });
+        }
+
+        // ATUALIZAÇÃO
+        $scope.atualizar = function() {
+            $scope.clear();
+            if (($scope.id == undefined || $scope.id.length == 0) || 
+                ($scope.descricao == undefined || $scope.descricao.length == 0) &&
+                ($scope.valor == undefined || $scope.valor.length == 0) &&
+                ($scope.devedorId == undefined || $scope.devedorId.length == 0) &&
+                ($scope.credorId == undefined || $scope.credorId.length == 0)) {
+
+                $scope.clear();
+                $scope.mensagem = "Fill at least one field above."
+                return;
+            }
+            var data = {
+                "id": $scope.id,
+                "descricao": $scope.descricao,
+                "valor": $scope.valor,
+                "devedorId": $scope.devedorId,
+                "credorId": $scope.credorId
+            };
+            var request = $http( {
+                "method": "put",
+                "url": "/debts/" + $scope.id,
+                "data": data
+            });
+            request.success(function(reply) {
+                $scope.mensagem = reply.result;
+            });
+            request.error(function(reply) {
+                alert("Request Error");
+            });
+        }
+
+        // REMOÇÃO
+        $scope.remover = function() {
+            if ($scope.id == undefined || $scope.id.length == 0) {
+                $scope.clear();
+                $scope.mensagem = "Id not exists"
+                return;
+            }
+            var request = $http({
+                "method": "delete",
+                "url": "/debts/" + $scope.id
+            });
+            request.success(function(reply) {
+                $scope.mensagem = reply.result;
+            });
+            request.error(function(reply) {
+                alert("Request Error");
+            });
+        };
+
+        //CLEAR
+        $scope.clear = function() {
+            $scope.debts = [];
+            $scope.mensagem = "";
+            $scope.hdescricao = $scope.hvalor = $scope.hcredorId = $scope.hdevedorId = "";
+        }
+    });
+</script>
+
+</body>
+</html>
