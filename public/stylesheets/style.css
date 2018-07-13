@@ -6,3 +6,12 @@ body {
 a {
   color: #00B7FF;
 }
+
+.left-container {
+  float: left;
+}
+
+.right-container {
+  float: right;
+  margin-left: 12px;
+}

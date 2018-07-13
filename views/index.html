@@ -1,45 +1,79 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Josué</title>
+        <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
 <body>
 
-<h1>Minhas dívidas</h1>
-
 <div ng-app="myApp" ng-controller="myCtrl">
-  <form>
-    Descrição:  <input type="text" ng-model="descricao"><br><br>
-    Valor:      <input type="text" ng-model="valor"><br><br>
-    Devedor:    <input type="text" ng-model="devedorId"><br><br>
-    Credor:     <input type="text" ng-model="credorId"><br><br>
-
-    <button ng-click="acessar()">ACESSAR</button> &nbsp;
-    <button ng-click="inserir()">INSERIR</button> &nbsp;
-    <button ng-click="atualizar()">ATUALIZAR</button> &nbsp;
-    <button ng-click="remover()">REMOVER</button> &nbsp;
-  </form>
-
-  <br><br>Resultado: {{mensagem}}
-
-  <br><br>
-  <table cellspacing="8">
-    <tr> 
-        <th>{{hdescricao}}</th>
-        <th>{{hvalor}}</th>
-        <th>{{hdevedorId}}</th>
-        <th>{{hcredorId}}</th>
-    </tr>
-    <tr ng-repeat="debt in debts">
-        <td>{{debt.descricao}}</td>
-        <td>{{debt.valor}}</td>
-        <td>{{debt.devedorId}}</td>
-        <td>{{debt.credorId}}</td>
-    </tr>
-  </table>
+    <div>
+        <h1>Josué</h1><br/>
+            <form>
+                <button class="btn-default" ng-click="doLogin()">LOGIN</button>&nbsp;&nbsp;
+                <button ng-click="doLogout()">LOGOUT</button>&nbsp;&nbsp;
+                <button ng-click="viewNotifications()">Notificações</button><br><br>
+            </form>
+                <br/><h4>Criar dívida</h4><br/>
+            <form>
+                Descrição:  <input type="text" class="form-control" ng-model="descricao"><br><br>
+                Valor:      <input type="text" class="form-control" ng-model="valor"><br><br>
+                Devedor:    <input type="text" class="form-control" ng-model="devedorId"><br><br>
+                Credor:     <input type="text" class="form-control" ng-model="credorId"><br><br>
+                <button ng-click="acessar()">ACESSAR</button> &nbsp;
+                <button ng-click="inserir()">INSERIR</button> &nbsp;
+            </form>
+            <br><br><spam>Mensagem: {{mensagem}}<br><br></spam>
+        </div>
+    <br><br>
+    <div>
+        <h3>Lista de dívidas</h3><br>
+        
+        <table class="table" cellspacing="8">
+            <tr> 
+                <th>{{hdescricao}}</th>
+                <th>{{hvalor}}</th>
+                <th>{{hdevedorId}}</th>
+                <th>{{hcredorId}}</th>
+                <th>{{hoption}}</th>
+            </tr>
+            <tr ng-repeat="debt in debts">
+                <td>{{debt.descricao}}</td>
+                <td>{{debt.valor}}</td>
+                <td>{{debt.devedorId}}</td>
+                <td>{{debt.credorId}}</td>
+                <td>
+                    <button ng-click="atualizar(debt._id)">EDITAR</button> &nbsp;
+                    <button ng-click="remover(debt._id)">REMOVER</button> &nbsp;
+                </td>
+            </tr>
+        </table>
+    </div>
 </div>
-
 <script>
     var app = angular.module('myApp', []);
     app.controller('myCtrl', function($scope, $http) {
+
+        // LOGIN 
+        $scope.doLogin = function() {
+            window.open("/authentication", "_blank");
+        }
+
+        // LOGOUT
+        $scope.doLogout = function() {
+            $scope.clear();
+            var request = $http({
+                "method": "delete",
+                "url": "/authentication"
+            });
+
+            request.success(function(reply) {
+                $scope.mensagem = reply.resultado;
+            });
+        }
 
         //ACESSO
         $scope.acessar = function() {
@@ -55,8 +89,9 @@
                 if (reply.data.debts != null) {
                     $scope.hdescricao = "Descrição";
                     $scope.hvalor = "Valor";
-                    $scope.hdevedorId = "Id do Devedor";
-                    $scope.hcredorId = "Id do Credor";
+                    $scope.hdevedorId = "Devedor";
+                    $scope.hcredorId = "Credor";
+                    $scope.hoption = "Opções";
                     $scope.mensagem = "";
                     $scope.debts = reply.data.debts
                 } else {
@@ -78,7 +113,7 @@
                 $scope.credorId == undefined || $scope.credorId.length == 0) {
 
                 $scope.clear();
-                $scope.mensagem = "Fill the fields above.";
+                $scope.mensagem = "Preencha todos os campos acima.";
                 return;        
             }
 
@@ -105,20 +140,20 @@
         }
 
         // ATUALIZAÇÃO
-        $scope.atualizar = function() {
+        $scope.atualizar = function(id) {
+            console.log(id);
             $scope.clear();
-            if (($scope.id == undefined || $scope.id.length == 0) || 
-                ($scope.descricao == undefined || $scope.descricao.length == 0) &&
+            if (($scope.descricao == undefined || $scope.descricao.length == 0) &&
                 ($scope.valor == undefined || $scope.valor.length == 0) &&
                 ($scope.devedorId == undefined || $scope.devedorId.length == 0) &&
                 ($scope.credorId == undefined || $scope.credorId.length == 0)) {
 
                 $scope.clear();
-                $scope.mensagem = "Fill at least one field above."
+                $scope.mensagem = "Preencha todos os campos acima";
                 return;
             }
             var data = {
-                "id": $scope.id,
+                "id": id,
                 "descricao": $scope.descricao,
                 "valor": $scope.valor,
                 "devedorId": $scope.devedorId,
@@ -126,7 +161,7 @@
             };
             var request = $http( {
                 "method": "put",
-                "url": "/debts/" + $scope.id,
+                "url": "/debts/" + id,
                 "data": data
             });
             request.success(function(reply) {
@@ -138,15 +173,16 @@
         }
 
         // REMOÇÃO
-        $scope.remover = function() {
-            if ($scope.id == undefined || $scope.id.length == 0) {
+        $scope.remover = function(id) {
+            console.log(id);
+            if (id == undefined || id.length == 0) {
                 $scope.clear();
-                $scope.mensagem = "Id not exists"
+                $scope.mensagem = "Id não existe";
                 return;
             }
             var request = $http({
                 "method": "delete",
-                "url": "/debts/" + $scope.id
+                "url": "/debts/" + id
             });
             request.success(function(reply) {
                 $scope.mensagem = reply.result;

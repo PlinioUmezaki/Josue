@@ -47,6 +47,15 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
+function checkAuth(req, res) {
+  cookies = req.cookies;
+  var key = '';
+  if(cookies) key = cookies.EA975;
+  if(key == 'secret') return true;
+  res.json({'resultado': 'Clique em LOGIN para continuar'});
+  return false;
+}
+
 router.route('/').get(function(req, res) {
   var path = '/views/index.html';
   res.header('Cache-Control', 'no-cache');
@@ -55,10 +64,13 @@ router.route('/').get(function(req, res) {
 
 router.route('/debts')
   .get(function(req, res) {
+    if (!checkAuth(req, res)) {
+      return;
+    }
     var response = {};
     debtModel.find({}, function(error, data) {
       if (error) {
-        response = {"result": "Database Access Fail"};
+        response = {"result": "Falha de acesso ao banco de dados"};
       } else {
         response = {"debts": data};
         res.json(response);
@@ -69,16 +81,16 @@ router.route('/debts')
     console.log(JSON.stringify(req.body));
     var response = {};
     var debtDb = new debtModel();
-    debtDb.descricao = req.body.descicao;
+    debtDb.descricao = req.body.descricao;
     debtDb.valor = req.body.valor;
     debtDb.devedorId = req.body.devedorId;
     debtDb.credorId = req.body.credorId;
     debtDb.save(function(error) {
       if (error) {
-        response = {"result": "Debt insertion fail"};
+        response = {"result": "Falha de inserção de dívida"};
         res.json(response);
       } else {
-        response = {"result": "Debt inserted"};
+        response = {"result": "Dívida inserida"};
         res.json(response);
       }
     })
@@ -90,10 +102,10 @@ router.route('/debts/:id')
     var query = {"id": req.params.id};
     debtModel.findOne(query, function(error, data) {
       if (error) {
-        response = {"result": "Database Access Fail"};
+        response = {"result": "Falha de acesso ao banco de dados"};
         res.json(response);
       } else if (data == null) {
-        response = {"result": "Debt Not Exists"};
+        response = {"result": "Dívida não existe"};
         res.json(response);
       } else {
         response = {"debts": [data]};
@@ -113,13 +125,13 @@ router.route('/debts/:id')
     };
     debtModel.findOneAndUpdate(query, data, function(error, data) {
       if (error) {
-        response = {"result": "Database Access Fail"};
+        response = {"result": "Falha ao acesso ao banco de dados"};
         res.json(response);
       } else if (data == null) {
-        response = {"result": "Debt Not Exists"};
+        response = {"result": "Dívida não existe"};
         res.json(response);
       } else {
-        response = {"resultado": "Debt Updated"};
+        response = {"resultado": "Dívida atualizada"};
         res.json(response);
       }
     })
@@ -128,16 +140,41 @@ router.route('/debts/:id')
   .delete(function(req, res) {
     var response = {};
     var query = {"id": req.params.id};
+    console.log(query);
     debtModel.findOneAndRemove(query, function(error, data) {
       if (error) {
-        response = {"result": "Database Access Fail"};
+        response = {"result": "Falha de acesso ao banco de dados"};
         res.json(response);
       } else if (data == null) {
-        response = {"result": "Debt Not Exists"};
+        response = {"result": "Dívida não existe"};
         res.json(response);
       } else {
-        response = {"result": "Debt Removed"};
+        response = {"result": "Dívida removida"};
         res.json(response);
       }
     })
   });
+
+  router.route('/authentication')
+    .get(function(req, res) {
+      var path = '/views/auth.html';
+      res.header('Cache-Control', 'no-cache');
+      res.sendFile(path, {"root": "./"});
+    })
+    
+    .post(function(req, res) {
+      console.log(JSON.stringify(req.body));
+      var user = req.body.user;
+      var pass = req.body.pass;
+      if (user == 'plinio' && pass == 'umezaki') {
+        res.cookie('EA975', 'secret', {'maxAge': 3600000*24*5});
+        res.status(200).send('');
+      } else {
+        res.status(401).send('');
+      }
+    })
+
+    .delete(function(req, res) {
+      res.clearCookie('EA975');
+      res.json({'resultado': 'Sucesso'});
+    });
