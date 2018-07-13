@@ -99,7 +99,7 @@ router.route('/debts')
 router.route('/debts/:id')
   .get(function(req, res) {
     var response = {};
-    var query = {"id": req.params.id};
+    var query = {"_id": req.params.id};
     debtModel.findOne(query, function(error, data) {
       if (error) {
         response = {"result": "Falha de acesso ao banco de dados"};
@@ -116,12 +116,12 @@ router.route('/debts/:id')
 
   .put(function(req, res) {
     var response = {};
-    var query = {"id": req.params.id};
+    var query = {"_id": req.params.id};
     var data = {
       "descricao": req.body.descricao,
       "valor": req.body.valor,
       "devedorId": req.body.devedorId,
-      "credorId": req.body.credorId
+      "credorId": req.body.credorId 
     };
     debtModel.findOneAndUpdate(query, data, function(error, data) {
       if (error) {
@@ -131,15 +131,15 @@ router.route('/debts/:id')
         response = {"result": "Dívida não existe"};
         res.json(response);
       } else {
-        response = {"resultado": "Dívida atualizada"};
+        response = {"result": "Dívida atualizada"};
         res.json(response);
       }
-    })
+    });
   })
 
   .delete(function(req, res) {
     var response = {};
-    var query = {"id": req.params.id};
+    var query = {"_id": req.params.id};
     console.log(query);
     debtModel.findOneAndRemove(query, function(error, data) {
       if (error) {

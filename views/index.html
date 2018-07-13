@@ -11,27 +11,28 @@
 
 <div ng-app="myApp" ng-controller="myCtrl">
     <div>
-        <h1>Josué</h1><br/>
+        <h1><b>Josué</b></h1><br/>
             <form>
-                <button class="btn-default" ng-click="doLogin()">LOGIN</button>&nbsp;&nbsp;
-                <button ng-click="doLogout()">LOGOUT</button>&nbsp;&nbsp;
-                <button ng-click="viewNotifications()">Notificações</button><br><br>
+                <button ng-click="viewNotifications()" class="btn btn-info">Ver notificações</button>&nbsp;&nbsp;
+                <button ng-click="doLogout()" class="btn float-right">Logout</button>
+                <button ng-click="doLogin()" class="btn  float-right">Login</button>
+                <br><br>
             </form>
-                <br/><h4>Criar dívida</h4><br/>
+                <br/><h4>Criar ou editar dívida</h4><br/>
             <form>
                 Descrição:  <input type="text" class="form-control" ng-model="descricao"><br><br>
-                Valor:      <input type="text" class="form-control" ng-model="valor"><br><br>
+                Valor (apenas inteiros):      <input type="text" class="form-control" ng-model="valor"><br><br>
                 Devedor:    <input type="text" class="form-control" ng-model="devedorId"><br><br>
                 Credor:     <input type="text" class="form-control" ng-model="credorId"><br><br>
-                <button ng-click="acessar()">ACESSAR</button> &nbsp;
-                <button ng-click="inserir()">INSERIR</button> &nbsp;
             </form>
-            <br><br><spam>Mensagem: {{mensagem}}<br><br></spam>
+            <button ng-click="acessar()" class="btn btn-info">Buscar dívidas</button>
+            <button ng-click="inserir()" class="btn btn-primary float-right">Inserir dívida</button>&nbsp;
+            <br><br><h5><span class="label label-default">{{mensagem}}</span></h5>
+             
         </div>
     <br><br>
     <div>
-        <h3>Lista de dívidas</h3><br>
-        
+        <h4>{{debtListTitle}}</h4>
         <table class="table" cellspacing="8">
             <tr> 
                 <th>{{hdescricao}}</th>
@@ -42,12 +43,12 @@
             </tr>
             <tr ng-repeat="debt in debts">
                 <td>{{debt.descricao}}</td>
-                <td>{{debt.valor}}</td>
+                <td>R${{debt.valor}},00</td>
                 <td>{{debt.devedorId}}</td>
                 <td>{{debt.credorId}}</td>
                 <td>
-                    <button ng-click="atualizar(debt._id)">EDITAR</button> &nbsp;
-                    <button ng-click="remover(debt._id)">REMOVER</button> &nbsp;
+                    <button ng-click="atualizar(debt)" class="btn btn-primary btn-sm">Editar</button> &nbsp;
+                    <button ng-click="remover(debt._id)" class="btn btn-danger btn-sm">Remover</button> &nbsp;
                 </td>
             </tr>
         </table>
@@ -87,6 +88,7 @@
             });
             request.then(function successCallback(reply) {
                 if (reply.data.debts != null) {
+                    $scope.debtListTitle = "Lista de dívidas";
                     $scope.hdescricao = "Descrição";
                     $scope.hvalor = "Valor";
                     $scope.hdevedorId = "Devedor";
@@ -98,17 +100,15 @@
                     $scope.clear();
                     $scope.mensagem = reply.data.result
                 }
-            });
-            request.then(function errorCallback(reply) {
-                alert("Request Error");
+            }).catch(function errorCallback(reply) {
+                alert("Request error");
             });
         };
 
         // INSERÇÃO
         $scope.inserir = function() {
             $scope.clear();
-            if ($scope.descricao == undefined || $scope.descricao.length == 0 ||
-                $scope.valor == undefined || $scope.valor.length == 0 ||
+            if ($scope.valor == undefined || $scope.valor.length == 0 ||
                 $scope.devedorId == undefined || $scope.devedorId.length == 0 ||
                 $scope.credorId == undefined || $scope.credorId.length == 0) {
 
@@ -123,80 +123,83 @@
                 "devedorId": $scope.devedorId,
                 "credorId": $scope.credorId
             };
-
+            console.log(data);
             var request = $http({
                 "method": "post",
                 "url": "/debts",
                 "data": data
             });
-
+            
             request.then(function successCallback(reply) {
                 $scope.mensagem = reply.data.result;
-            });
-
-            request(function errorCallback(reply) {
-                alert("Request Error");
+            }).catch(function errorCallback(reply) {
+                alert("Request error");
             });
         }
 
         // ATUALIZAÇÃO
-        $scope.atualizar = function(id) {
-            console.log(id);
+        $scope.atualizar = function(debt) {
             $scope.clear();
-            if (($scope.descricao == undefined || $scope.descricao.length == 0) &&
+            if (($scope.descricao == undefined || $scope.descricao.length == 0) && 
                 ($scope.valor == undefined || $scope.valor.length == 0) &&
                 ($scope.devedorId == undefined || $scope.devedorId.length == 0) &&
                 ($scope.credorId == undefined || $scope.credorId.length == 0)) {
 
                 $scope.clear();
-                $scope.mensagem = "Preencha todos os campos acima";
+                $scope.mensagem = "Um dos campos devem ser preenchidos";
                 return;
             }
+            
             var data = {
-                "id": id,
-                "descricao": $scope.descricao,
-                "valor": $scope.valor,
-                "devedorId": $scope.devedorId,
-                "credorId": $scope.credorId
+                "id": debt._id,
+                "descricao": !$scope.descricao ? debt.descricao : $scope.descricao,
+                "valor": !$scope.valor ? debt.valor : $scope.valor,
+                "devedorId": !$scope.devedorId ? debt.devedorId : $scope.devedorId,
+                "credorId": !$scope.credorId ? debt.credorId : $scope.credorId
             };
             var request = $http( {
                 "method": "put",
-                "url": "/debts/" + id,
+                "url": "/debts/" + debt._id,
                 "data": data
             });
-            request.success(function(reply) {
-                $scope.mensagem = reply.result;
-            });
-            request.error(function(reply) {
-                alert("Request Error");
-            });
+
+            request.then(
+                function success(reply) {
+                    $scope.mensagem = reply.data.result;
+                },
+                function error(reply) {
+                    alert("Request Error");
+                }
+            );
         }
 
         // REMOÇÃO
         $scope.remover = function(id) {
-            console.log(id);
+            $scope.clear();
             if (id == undefined || id.length == 0) {
                 $scope.clear();
-                $scope.mensagem = "Id não existe";
+                $scope.mensagem = "Id não existe.";
                 return;
             }
             var request = $http({
                 "method": "delete",
                 "url": "/debts/" + id
             });
-            request.success(function(reply) {
-                $scope.mensagem = reply.result;
-            });
-            request.error(function(reply) {
-                alert("Request Error");
-            });
+            request.then(
+                function success(reply) {
+                    $scope.mensagem = reply.data.result;
+                },
+                function error(reply) {
+                    alert("Request Error");
+                }
+            )
         };
 
         //CLEAR
         $scope.clear = function() {
             $scope.debts = [];
             $scope.mensagem = "";
-            $scope.hdescricao = $scope.hvalor = $scope.hcredorId = $scope.hdevedorId = "";
+            $scope.hdescricao = $scope.hvalor = $scope.hcredorId = $scope.hdevedorId = $scope.hoption = $scope.debtListTitle =  "";
         }
     });
 </script>
